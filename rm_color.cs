@@ -11,7 +11,7 @@
 // For help writing a Bitmap plugin: https://boltbait.com/pdn/CodeLab/help/tutorial/bitmap/
 
 #region UICode
-IntSliderControl Size = 1; // [1,100] 粗细
+IntSliderControl Tolerance = 0; // [0,100] 差容
 #endregion
 
 protected override void OnRender(IBitmapEffectOutput output)
@@ -25,7 +25,6 @@ protected override void OnRender(IBitmapEffectOutput output)
     RegionPtr<ColorBgra32> outputSubRegion = outputLock.AsRegionPtr();
     var outputRegion = outputSubRegion.OffsetView(-outputBounds.Location);
     //uint seed = RandomNumber.InitializeSeed(RandomNumberRenderSeed, outputBounds.Location);
-    IGeometry outlineGeometry = Environment.Selection.Geometry;
 
     // Delete any of these lines you don't need
     ColorBgra32 primaryColor = Environment.PrimaryColor;
@@ -36,11 +35,7 @@ protected override void OnRender(IBitmapEffectOutput output)
     int selectionCenterX = (selection.Right - selection.Left) / 2 + selection.Left;
     int selectionCenterY = (selection.Bottom - selection.Top) / 2 + selection.Top;
 
-    // Point2Float neighbourL = new Point2Float(0, 0);
-    // Point2Float neighbourT = new Point2Float(0, 0);
-    // Point2Float neighbourR = new Point2Float(0, 0);
-    // Point2Float neighbourB = new Point2Float(0, 0);
-    Point2Float pix = new Point2Float(0, 0);
+    ColorBgra32 transparent = new ColorBgra32(0, 0, 0, 0);
     // Loop through the output canvas tile
     for (int y = outputBounds.Top; y < outputBounds.Bottom; ++y)
     {
@@ -51,29 +46,15 @@ protected override void OnRender(IBitmapEffectOutput output)
             // Get your source pixel
             ColorBgra32 sourcePixel = sourceRegion[x,y];
 
-            // if( !outlineGeometry.FillContainsPoint(new Point2Float(x-Size, y)) || 
-            //    !outlineGeometry.FillContainsPoint(new Point2Float(x, y-Size)) ||
-            //    !outlineGeometry.FillContainsPoint(new Point2Float(x+Size, y)) || 
-            //    !outlineGeometry.FillContainsPoint(new Point2Float(x, y+Size))
-            
-            // neighbourL.X = x-Size;
-            // neighbourL.Y = y;
-            // neighbourT.X = x;
-            // neighbourT.Y = y-Size;
-            // neighbourR.X = x+Size;
-            // neighbourR.Y = y;
-            // neighbourB.X = x;
-            // neighbourB.Y = y+Size;
-            pix.X = x;
-            pix.Y = y;
-
-            // if( !outlineGeometry.FillContainsPoint(neighbourL, flatteningTolerance:1) || 
-            //     !outlineGeometry.FillContainsPoint(neighbourT, flatteningTolerance:1) ||
-            //     !outlineGeometry.FillContainsPoint(neighbourR, flatteningTolerance:1) || 
-            //     !outlineGeometry.FillContainsPoint(neighbourB, flatteningTolerance:1)
-            if( outlineGeometry.StrokeContainsPoint(pix, Size)
+            // TODO: Change source pixel according to some algorithm
+            if(
+                ( (sourcePixel.B - Environment.PrimaryColor.B) * (sourcePixel.B - Environment.PrimaryColor.B) +
+                (sourcePixel.G - Environment.PrimaryColor.G) * (sourcePixel.G - Environment.PrimaryColor.G) +
+                (sourcePixel.R - Environment.PrimaryColor.R) * (sourcePixel.R - Environment.PrimaryColor.R) +
+                (sourcePixel.A - Environment.PrimaryColor.A) * (sourcePixel.A - Environment.PrimaryColor.A) )
+                <= 260100 * Tolerance / 100
             ){
-                sourcePixel = Environment.PrimaryColor;
+                sourcePixel = transparent;
             }
 
             // Save your pixel to the output canvas
